@@ -39,5 +39,101 @@ workflows:
             --target=integration_test/evidencia_ios_test.dart \
             -d "$SIMULATOR_UDID"
 
+      - name: Compilar para simulador
+        working_directory: apps/gestor_archivos
+        script: flutter build ios --simulator --debug --no-codesign
+
+      - name: Verificar capturas
+        working_directory: apps/gestor_archivos
+        script: |
+          ls screenshots/*.png || { echo "No hay capturas PNG en screenshots/"; exit 1; }
+
+      - name: Empaquetar Runner.app
+        working_directory: apps/gestor_archivos
+        script: |
+          mkdir -p artefactos
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/ios/iphonesimulator/Runner.app \
+            artefactos/gestor_archivos-simulador.zip
+
     artifacts:
       - apps/gestor_archivos/screenshots/**
+      - apps/gestor_archivos/artefactos/*.zip
+
+  ios-juego-capturas:
+    name: iOS Juego — capturas de evidencia
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: 3.47.6
+    scripts:
+      - name: Dependencias
+        working_directory: apps/juego_pares
+        script: flutter pub get
+
+      - name: Análisis estático
+        working_directory: apps/juego_pares
+        script: flutter analyze
+
+      - name: Pruebas unitarias y de widgets
+        working_directory: apps/juego_pares
+        script: flutter test
+
+      - name: Arrancar simulador
+        script: |
+          UDID=$(python3 tools/elegir_simulador.py)
+          echo "Simulador elegido: $UDID"
+          echo "SIMULATOR_UDID=$UDID" >> $CM_ENV
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override \
+            --time "9:41" --batteryState charged --batteryLevel 100 \
+            --wifiBars 3 --cellularBars 4
+          xcrun simctl ui "$UDID" appearance light
+
+      - name: Prueba de integración con capturas
+        working_directory: apps/juego_pares
+        script: |
+          rm -rf screenshots
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/evidencia_ios_test.dart \
+            -d "$SIMULATOR_UDID"
+
+      - name: Compilar para simulador
+        working_directory: apps/juego_pares
+        script: flutter build ios --simulator --debug --no-codesign
+
+      - name: Verificar capturas
+        working_directory: apps/juego_pares
+        script: |
+          ls screenshots/*.png || { echo "No hay capturas PNG en screenshots/"; exit 1; }
+
+      - name: Empaquetar Runner.app
+        working_directory: apps/juego_pares
+        script: |
+          mkdir -p artefactos
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/ios/iphonesimulator/Runner.app \
+            artefactos/juego_pares-simulador.zip
+
+    artifacts:
+      - apps/juego_pares/screenshots/**
+      - apps/juego_pares/artefactos/*.zip
+
+  ios-paquetes:
+    name: iOS paquetes — analyze y test
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: 3.47.6
+    scripts:
+      - name: Analyze y test de sensores y enlace_ble
+        script: |
+          for p in sensores enlace_ble; do
+            if [ -d "packages/$p" ]; then
+              (cd "packages/$p" && flutter pub get && flutter analyze && flutter test)
+            else
+              echo "packages/$p no existe; se omite."
+            fi
+          done

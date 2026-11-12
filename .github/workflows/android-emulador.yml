@@ -1,3 +1,4 @@
+# Respaldo; no se usa para la evidencia (regla: dispositivo físico)
 name: Android emulador (evidencia de respaldo)
 
 # Se ejecuta manualmente desde Actions. Es un respaldo para cuando no hay un
