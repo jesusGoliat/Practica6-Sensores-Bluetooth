@@ -1,0 +1,27 @@
+name: consulta_web
+description: "Consulta web por Bluetooth (Práctica 6): A con Internet hace las peticiones HTTPS, B solo Bluetooth."
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.13.5
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.5+1
+  path_provider: ^2.1.6
+  intl: ^0.20.3
+  comun:
+    path: ../comun
+  enlace_ble:
+    path: ../enlace_ble
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
