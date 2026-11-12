@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuracion tema="guinda" modo="sistema" version="1">
+  <aplicacion nombre="Gestor IPN" offline="true">
+    <almacenamiento tipo="privado" permiso="concedido"/>
+  </aplicacion>
+  <accesibilidad textoGrande="false" areasTactiles="48"/>
+  <formatos>
+    <formato extension="txt" mime="text/plain"/>
+    <formato extension="json" mime="application/json"/>
+    <formato extension="xml" mime="application/xml"/>
+    <formato extension="png" mime="image/png"/>
+  </formatos>
+</configuracion>

@@ -1,0 +1,53 @@
+# Apuntes y material de referencia (no forman parte de la entrega)
+LECCIONES_APRENDIDAS.md
+Practica4.pdf
+*.pdf
+CLAUDE.md
+apuntes/
+
+# Flutter / Dart
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub/
+**/build/
+**/coverage/
+**/screenshots/
+**/test_output/
+
+# Android / Gradle
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+**/*.jks
+**/*.keystore
+**/.gradle/
+**/.kotlin/
+**/*.iml
+**/.idea/
+**/.vscode/
+**/captures/
+**/.externalNativeBuild/
+**/.cxx/
+
+# iOS / CocoaPods
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Runner.xcworkspace/xcuserdata/
+**/ios/Runner.xcodeproj/xcuserdata/
+**/ios/Runner.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# Archivos temporales de trabajo
+artifacts/
+docs/img/tmp/

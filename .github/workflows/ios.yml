@@ -1,0 +1,94 @@
+name: iOS build y evidencias
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - ".github/workflows/ios.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: iOS ${{ matrix.app }}
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [gestor_archivos, juego_pares]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mostrar Xcode
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.6
+          channel: stable
+          cache: true
+
+      - name: Dependencias
+        working-directory: apps/${{ matrix.app }}
+        run: flutter pub get
+
+      - name: Análisis estático
+        working-directory: apps/${{ matrix.app }}
+        run: flutter analyze
+
+      - name: Pruebas unitarias y de widgets
+        working-directory: apps/${{ matrix.app }}
+        run: flutter test
+
+      - name: Arrancar simulador
+        id: sim
+        run: |
+          UDID=$(python3 tools/elegir_simulador.py)
+          echo "Simulador: $UDID"
+          echo "udid=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override \
+            --time "9:41" --batteryState charged --batteryLevel 100 \
+            --wifiBars 3 --cellularBars 4
+          xcrun simctl ui "$UDID" appearance light
+
+      - name: Prueba de integración con capturas
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          rm -rf screenshots
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/evidencia_ios_test.dart \
+            -d "$udid"
+
+      - name: Compilar para simulador
+        working-directory: apps/${{ matrix.app }}
+        run: flutter build ios --simulator --debug
+
+      - name: Empaquetar .app
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          mkdir -p artefactos
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/ios/iphonesimulator/Runner.app \
+            "artefactos/${{ matrix.app }}-simulador.zip"
+
+      - name: Subir capturas y app
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-${{ matrix.app }}
+          if-no-files-found: warn
+          path: |
+            apps/${{ matrix.app }}/screenshots
+            apps/${{ matrix.app }}/artefactos
+            apps/${{ matrix.app }}/build/ios/iphonesimulator/Runner.app

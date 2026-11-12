@@ -1,0 +1,43 @@
+workflows:
+  ios-gestor-capturas:
+    name: iOS Gestor — capturas de evidencia
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: 3.47.6
+    scripts:
+      - name: Dependencias
+        working_directory: apps/gestor_archivos
+        script: flutter pub get
+
+      - name: Análisis estático
+        working_directory: apps/gestor_archivos
+        script: flutter analyze
+
+      - name: Pruebas unitarias y de widgets
+        working_directory: apps/gestor_archivos
+        script: flutter test
+
+      - name: Arrancar simulador
+        script: |
+          UDID=$(python3 tools/elegir_simulador.py)
+          echo "Simulador elegido: $UDID"
+          echo "SIMULATOR_UDID=$UDID" >> $CM_ENV
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override \
+            --time "9:41" --batteryState charged --batteryLevel 100 \
+            --wifiBars 3 --cellularBars 4
+          xcrun simctl ui "$UDID" appearance light
+
+      - name: Prueba de integración con capturas
+        working_directory: apps/gestor_archivos
+        script: |
+          rm -rf screenshots
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/evidencia_ios_test.dart \
+            -d "$SIMULATOR_UDID"
+
+    artifacts:
+      - apps/gestor_archivos/screenshots/**

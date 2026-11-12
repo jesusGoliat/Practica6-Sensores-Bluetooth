@@ -1,0 +1,62 @@
+name: CI Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  comun:
+    name: Paquete común
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.6
+          channel: stable
+          cache: true
+      - working-directory: packages/comun
+        run: flutter pub get
+      - working-directory: packages/comun
+        run: flutter analyze
+      - working-directory: packages/comun
+        run: flutter test
+
+  android:
+    name: Android ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [gestor_archivos, juego_pares]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.6
+          channel: stable
+          cache: true
+      - name: Dependencias
+        working-directory: apps/${{ matrix.app }}
+        run: flutter pub get
+      - name: Análisis estático
+        working-directory: apps/${{ matrix.app }}
+        run: flutter analyze
+      - name: Pruebas
+        working-directory: apps/${{ matrix.app }}
+        run: flutter test
+      - name: APK release
+        working-directory: apps/${{ matrix.app }}
+        run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ matrix.app }}
+          path: apps/${{ matrix.app }}/build/app/outputs/flutter-apk/app-release.apk

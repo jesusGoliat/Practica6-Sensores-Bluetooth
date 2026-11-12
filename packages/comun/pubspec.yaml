@@ -1,0 +1,23 @@
+name: comun
+description: "Temas Guinda/Azul, textos, resaltado de sintaxis y widgets compartidos de la Práctica 4."
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.13.5
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  intl: ^0.20.3
+  mime: ^2.1.0
+  xml: ^7.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,7 @@
+{
+  "archivo": "datos_invalidos.json",
+  "motivo": "Falta una llave de cierre y una coma",
+  "ejemplo": [
+    { "id": 1, "nombre": "Guinda" }
+    { "id": 2, "nombre": "Azul" }
+  ]

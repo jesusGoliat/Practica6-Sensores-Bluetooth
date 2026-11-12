@@ -1,0 +1,16 @@
+{
+  "materia": "Desarrollo de aplicaciones móviles nativas",
+  "practica": 4,
+  "tema": "Gestión de archivos multiplataforma",
+  "alumno": {
+    "nombre": "Jesús Ángel González Arellano",
+    "boleta": "2022630690",
+    "grupo": "7CV4"
+  },
+  "plataformas": ["Android", "iOS"],
+  "offline": true,
+  "temas": [
+    { "nombre": "Guinda IPN", "color": "#6C1D45" },
+    { "nombre": "Azul ESCOM", "color": "#003B5C" }
+  ]
+}

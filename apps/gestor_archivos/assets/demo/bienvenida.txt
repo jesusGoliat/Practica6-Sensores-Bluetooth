@@ -1,0 +1,15 @@
+Bienvenido al Gestor de Archivos IPN.
+
+Esta aplicación funciona completamente sin conexión y respeta las reglas de
+almacenamiento de Android e iOS:
+
+- En "Espacio de la app" puedes explorar, crear, copiar, mover, renombrar y
+  eliminar archivos propios.
+- Con "Añadir carpeta" eliges una carpeta mediante el selector del sistema
+  (SAF en Android, selector de documentos en iOS). La app solo verá lo que tú
+  autorices.
+- Los archivos JSON y XML se muestran con formato y resaltado de sintaxis.
+- Las imágenes se pueden ampliar con dos dedos y girar 90 grados.
+
+Prueba a abrir notas.md, datos.json, configuracion.xml, la imagen del campus o
+el archivo muestra.xyz (formato no soportado).
