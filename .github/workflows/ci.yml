@@ -3,30 +3,61 @@ name: CI Android
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-android-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  comun:
-    name: Paquete común
+  paquetes:
+    name: Paquete ${{ matrix.paquete }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        paquete: [comun, sensores, enlace_ble, consulta_web]
     steps:
       - uses: actions/checkout@v4
+      - name: Verificar que el paquete existe
+        id: existe
+        run: |
+          if [ -d "packages/${{ matrix.paquete }}" ]; then
+            echo "existe=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "existe=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::packages/${{ matrix.paquete }} aún no existe; se omite."
+          fi
       - uses: subosito/flutter-action@v2
+        if: steps.existe.outputs.existe == 'true'
         with:
           flutter-version: 3.47.6
           channel: stable
           cache: true
-      - working-directory: packages/comun
+      - name: Dependencias
+        if: steps.existe.outputs.existe == 'true'
+        working-directory: packages/${{ matrix.paquete }}
         run: flutter pub get
-      - working-directory: packages/comun
+      - name: Análisis estático
+        if: steps.existe.outputs.existe == 'true'
+        working-directory: packages/${{ matrix.paquete }}
         run: flutter analyze
-      - working-directory: packages/comun
-        run: flutter test
+      - name: Pruebas
+        if: steps.existe.outputs.existe == 'true'
+        working-directory: packages/${{ matrix.paquete }}
+        run: |
+          if [ -d test ]; then
+            flutter test
+          else
+            echo "Sin directorio test/; se omite."
+          fi
 
-  android:
+  apps:
     name: Android ${{ matrix.app }}
     runs-on: ubuntu-latest
     strategy:
@@ -58,5 +89,5 @@ jobs:
         run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: apk-${{ matrix.app }}
+          name: p6-${{ matrix.app }}-apk
           path: apps/${{ matrix.app }}/build/app/outputs/flutter-apk/app-release.apk

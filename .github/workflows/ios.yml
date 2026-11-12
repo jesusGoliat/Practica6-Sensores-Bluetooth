@@ -1,13 +1,8 @@
 name: iOS build y evidencias
 
+# Solo manual: la ruta principal para iOS es Codemagic (codemagic.yaml).
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "apps/**"
-      - "packages/**"
-      - ".github/workflows/ios.yml"
 
 permissions:
   contents: read
@@ -72,7 +67,7 @@ jobs:
 
       - name: Compilar para simulador
         working-directory: apps/${{ matrix.app }}
-        run: flutter build ios --simulator --debug
+        run: flutter build ios --simulator --debug --no-codesign
 
       - name: Empaquetar .app
         working-directory: apps/${{ matrix.app }}

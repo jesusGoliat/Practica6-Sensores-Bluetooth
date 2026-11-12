@@ -49,7 +49,7 @@ dependencies:
     path: ../../packages/comun
   sensors_plus: ^7.1.1
   bluetooth_low_energy: ^6.2.1
-  permission_handler: ^13.0.2
+  permission_handler: ^12.0.1
   crypto: ^3.0.8
 
 dev_dependencies:
