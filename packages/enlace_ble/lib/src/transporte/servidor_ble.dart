@@ -2,7 +2,9 @@
 library;
 
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:bluetooth_low_energy/bluetooth_low_energy.dart';
 
@@ -22,16 +24,37 @@ enum EstadoServidor { detenido, iniciando, anunciando, conectado, error }
 class ServidorBle {
   /// [app] identifica la aplicación en el nombre anunciado `P6-<app>-<4hex>`.
   ServidorBle({required String app, Random? azar})
-      : nombreAnuncio = _nombre(app, azar ?? Random());
+    : app = _limpiar8(app),
+      _sufijo = (azar ?? Random()).nextInt(0x10000);
 
-  /// Nombre local anunciado.
-  final String nombreAnuncio;
+  /// App anunciada (`juego`, `archivos` o `web`).
+  final String app;
+  final int _sufijo;
 
-  static String _nombre(String app, Random azar) {
+  /// Nombre visible `P6-<app>-<4hex>` con el que los centrales lo listan.
+  String get nombreAnuncio => nombreVisible(app, _sufijo);
+
+  static String _limpiar8(String app) {
     final limpio = app.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
     final corto = limpio.length > 8 ? limpio.substring(0, 8) : limpio;
-    final sufijo = azar.nextInt(0x10000).toRadixString(16).padLeft(4, '0');
-    return 'P6-${corto.isEmpty ? 'app' : corto}-$sufijo';
+    return corto.isEmpty ? 'app' : corto;
+  }
+
+  /// Android: datos de fabricante (no renombra el adaptador del teléfono).
+  /// iOS: nombre local (CoreBluetooth no anuncia datos de fabricante).
+  Advertisement _anuncio() {
+    if (Platform.isAndroid) {
+      return Advertisement(
+        serviceUUIDs: [uuidServicio],
+        manufacturerSpecificData: [
+          ManufacturerSpecificData(
+            id: idFabricantePruebas,
+            data: Uint8List.fromList(datosFabricante(app, _sufijo)),
+          ),
+        ],
+      );
+    }
+    return Advertisement(name: nombreAnuncio, serviceUUIDs: [uuidServicio]);
   }
 
   final _estado = StreamController<EstadoServidor>.broadcast();
@@ -102,15 +125,15 @@ class ServidorBle {
         descriptors: [],
       );
       _tx = tx;
-      await g.addService(GATTService(
-        uuid: uuidServicio,
-        isPrimary: true,
-        includedServices: [],
-        characteristics: [rx, tx],
-      ));
-      await g.startAdvertising(
-        Advertisement(name: nombreAnuncio, serviceUUIDs: [uuidServicio]),
+      await g.addService(
+        GATTService(
+          uuid: uuidServicio,
+          isPrimary: true,
+          includedServices: [],
+          characteristics: [rx, tx],
+        ),
       );
+      await g.startAdvertising(_anuncio());
       _poner(EstadoServidor.anunciando);
       return EstadoBluetooth.encendido;
     } catch (e) {
@@ -123,11 +146,13 @@ class ServidorBle {
   void _escuchar(PeripheralManager g) {
     if (_subs.isNotEmpty) return;
     void ante<T>(Stream<T> s, void Function(T) f) {
-      _subs.add(s.listen((x) {
-        try {
-          f(x);
-        } catch (_) {}
-      }, onError: (Object _) {}));
+      _subs.add(
+        s.listen((x) {
+          try {
+            f(x);
+          } catch (_) {}
+        }, onError: (Object _) {}),
+      );
     }
 
     ante(g.characteristicNotifyStateChanged, _alCambiarNotificacion);
@@ -138,7 +163,9 @@ class ServidorBle {
       }
     });
     ante(g.mtuChanged, (CentralMTUChangedEventArgs a) {
-      if (a.central == _central) _transporte?.maxFragmento = ajustarFragmento(a.mtu - 3);
+      if (a.central == _central) {
+        _transporte?.maxFragmento = ajustarFragmento(a.mtu - 3);
+      }
     });
     ante(g.stateChanged, (BluetoothLowEnergyStateChangedEventArgs a) {
       if (a.state != BluetoothLowEnergyState.poweredOn &&
@@ -184,7 +211,8 @@ class ServidorBle {
   void _alEscribir(GATTCharacteristicWriteRequestedEventArgs a) {
     final g = _gestor;
     if (g == null) return;
-    final valido = a.characteristic.uuid == uuidRx &&
+    final valido =
+        a.characteristic.uuid == uuidRx &&
         a.central == _central &&
         a.request.offset == 0;
     unawaited(() async {
@@ -192,10 +220,12 @@ class ServidorBle {
         if (valido) {
           await g.respondWriteRequest(a.request);
         } else {
-          await g.respondWriteRequestWithError(a.request,
-              error: a.request.offset != 0
-                  ? GATTError.invalidOffset
-                  : GATTError.writeNotPermitted);
+          await g.respondWriteRequestWithError(
+            a.request,
+            error: a.request.offset != 0
+                ? GATTError.invalidOffset
+                : GATTError.writeNotPermitted,
+          );
         }
       } catch (_) {}
     }());

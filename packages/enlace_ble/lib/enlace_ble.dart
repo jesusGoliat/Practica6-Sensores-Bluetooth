@@ -11,7 +11,16 @@ export 'src/protocolo/transporte_bytes.dart';
 export 'src/protocolo/transporte_memoria.dart';
 export 'src/transporte/cliente_ble.dart';
 export 'src/transporte/constantes_ble.dart'
-    show uuidServicioTexto, uuidRxTexto, uuidTxTexto;
+    show
+        uuidServicioTexto,
+        uuidRxTexto,
+        uuidTxTexto,
+        idFabricantePruebas,
+        codigosApp,
+        datosFabricante,
+        leerDatosFabricante,
+        nombreVisible,
+        appDeNombre;
 export 'src/transporte/estado_bluetooth.dart';
 export 'src/transporte/permisos_ble.dart';
 export 'src/transporte/servidor_ble.dart';

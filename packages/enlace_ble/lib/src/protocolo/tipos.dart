@@ -54,18 +54,34 @@ abstract final class TiposMensaje {
 
   /// Tipos comunes a todos los canales.
   static const Set<String> comunes = {
-    hola, acepta, rechaza, ack, ping, adios, error,
+    hola,
+    acepta,
+    rechaza,
+    ack,
+    ping,
+    adios,
+    error,
   };
 
   /// Tipos del canal `juego`.
   static const Set<String> deJuego = {
-    partidaNueva, jugada, estado, reanudar, fin,
+    partidaNueva,
+    jugada,
+    estado,
+    reanudar,
+    fin,
   };
 
   /// Tipos del canal `archivos`.
   static const Set<String> deArchivos = {
-    oferta, ofertaAcepta, ofertaRechaza, bloque, bloqueAck, cancela,
-    finArchivo, resultado,
+    oferta,
+    ofertaAcepta,
+    ofertaRechaza,
+    bloque,
+    bloqueAck,
+    cancela,
+    finArchivo,
+    resultado,
   };
 
   /// Tipos del canal `web`.

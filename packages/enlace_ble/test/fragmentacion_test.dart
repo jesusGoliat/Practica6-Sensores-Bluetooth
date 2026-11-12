@@ -3,7 +3,8 @@ import 'dart:typed_data';
 import 'package:enlace_ble/enlace_ble.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Uint8List datos(int n) => Uint8List.fromList(List.generate(n, (i) => (i * 7 + 3) & 0xFF));
+Uint8List datos(int n) =>
+    Uint8List.fromList(List.generate(n, (i) => (i * 7 + 3) & 0xFF));
 
 void main() {
   group('Fragmentador / Reensamblador', () {
@@ -31,7 +32,10 @@ void main() {
     });
 
     test('rechaza más de 64 KiB al fragmentar', () {
-      expect(() => Fragmentador(20).fragmentar(datos(65537)), throwsA(isA<ErrorProtocolo>()));
+      expect(
+        () => Fragmentador(20).fragmentar(datos(65537)),
+        throwsA(isA<ErrorProtocolo>()),
+      );
     });
 
     test('msgId da la vuelta en 65535', () {
@@ -70,7 +74,10 @@ void main() {
     });
 
     test('rechaza fragmento corto', () {
-      expect(() => Reensamblador().agregar(Uint8List(3)), throwsA(isA<ErrorProtocolo>()));
+      expect(
+        () => Reensamblador().agregar(Uint8List(3)),
+        throwsA(isA<ErrorProtocolo>()),
+      );
     });
 
     test('descarta incompletos tras el tiempo límite', () {

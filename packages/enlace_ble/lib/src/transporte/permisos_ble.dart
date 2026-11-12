@@ -109,7 +109,8 @@ abstract final class PermisosBle {
     }
   }
 
-  static List<Permission> _permisosBluetooth(RolBle rol) => rol == RolBle.central
+  static List<Permission> _permisosBluetooth(RolBle rol) =>
+      rol == RolBle.central
       ? [Permission.bluetoothScan, Permission.bluetoothConnect]
       : [Permission.bluetoothAdvertise, Permission.bluetoothConnect];
 
