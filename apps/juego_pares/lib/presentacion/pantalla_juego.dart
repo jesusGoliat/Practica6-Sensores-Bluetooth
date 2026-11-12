@@ -2,9 +2,10 @@ import 'package:comun/comun.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../datos/control_movimiento.dart';
 import '../datos/estado_juego.dart';
-import '../dominio/carta.dart';
-import 'widgets/carta_animada.dart';
+import 'widgets/alcance_movimiento.dart';
+import 'widgets/tablero_cartas.dart';
 import 'widgets/confeti.dart';
 
 class PantallaJuego extends StatefulWidget {
@@ -37,6 +38,17 @@ class _PantallaJuegoState extends State<PantallaJuego> {
     if (partida == null) {
       return const Scaffold(body: Center(child: Text('No hay una partida activa.')));
     }
+    return AlcanceMovimiento(
+      filas: partida.filas,
+      columnas: partida.columnas,
+      alVoltear: (i) => _juego.voltear(i),
+      builder: (context, control) => _construir(context, juego, control),
+    );
+  }
+
+  Widget _construir(BuildContext context, EstadoJuego juego, ControlMovimiento control) {
+    final partida = juego.partida;
+    if (partida == null) return const SizedBox.shrink();
     final cuerpo = Column(
       children: [
         _Estadisticas(juego: juego),
@@ -51,7 +63,17 @@ class _PantallaJuegoState extends State<PantallaJuego> {
             ),
           ),
         ),
-        Expanded(child: _Tablero(juego: juego)),
+        Expanded(
+          child: TableroCartas(
+            cartas: partida.tablero,
+            filas: partida.filas,
+            columnas: partida.columnas,
+            animaciones: juego.animaciones,
+            alTocar: juego.voltear,
+            cursor: control.encendido ? control.cursor : null,
+          ),
+        ),
+        SwitchMovimiento(control: control),
         _Pie(juego: juego),
       ],
     );
@@ -276,54 +298,6 @@ class _Dato extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Tablero extends StatelessWidget {
-  const _Tablero({required this.juego});
-
-  final EstadoJuego juego;
-
-  @override
-  Widget build(BuildContext context) {
-    final partida = juego.partida!;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const separacion = 6.0;
-        final maxAncho = constraints.maxWidth - 24;
-        final maxAlto = constraints.maxHeight - 12;
-        final anchoCelda = (maxAncho - (partida.columnas - 1) * separacion) / partida.columnas;
-        final altoCelda = (maxAlto - (partida.filas - 1) * separacion) / partida.filas;
-        final lado = anchoCelda < altoCelda ? anchoCelda : altoCelda;
-        final ancho = lado * partida.columnas + (partida.columnas - 1) * separacion;
-        final alto = lado * partida.filas + (partida.filas - 1) * separacion;
-        return Center(
-          child: SizedBox(
-            width: ancho.clamp(0, maxAncho),
-            height: alto.clamp(0, maxAlto),
-            child: GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: partida.columnas,
-                mainAxisSpacing: separacion,
-                crossAxisSpacing: separacion,
-              ),
-              itemCount: partida.tablero.length,
-              itemBuilder: (context, i) {
-                final Carta carta = partida.tablero[i];
-                return CartaAnimada(
-                  carta: carta,
-                  indice: i,
-                  animaciones: juego.animaciones,
-                  alTocar: () => juego.voltear(i),
-                );
-              },
-            ),
-          ),
-        );
-      },
     );
   }
 }
