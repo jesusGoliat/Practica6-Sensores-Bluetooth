@@ -1,5 +1,6 @@
 package mx.ipn.escom.p6.gestor_archivos
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// local_auth necesita una FragmentActivity para mostrar BiometricPrompt.
+class MainActivity : FlutterFragmentActivity()

@@ -70,5 +70,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Se usa Bluetooth para conectar con otro dispositivo cercano y jugar, enviar archivos o consultar recursos web de prueba.</string>
 </dict>
 </plist>

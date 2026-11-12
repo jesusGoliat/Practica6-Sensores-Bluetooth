@@ -53,6 +53,10 @@ dependencies:
     path: ../../packages/comun
   selector_carpetas_ios:
     path: ../../packages/selector_carpetas_ios
+  sensors_plus: ^7.1.1
+  local_auth: ^3.0.2
+  bluetooth_low_energy: ^6.2.1
+  permission_handler: ^13.0.2
 
 dev_dependencies:
   flutter_test:
