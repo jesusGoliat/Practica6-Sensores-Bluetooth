@@ -63,7 +63,7 @@ class PuenteMemoria implements PuenteBle {
 
 Future<void> asentar() async {
   for (var i = 0; i < 25; i++) {
-    await Future<void>.delayed(const Duration(milliseconds: 3));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
   }
 }
 
