@@ -104,6 +104,15 @@ class PreferenciasApp {
     }
   }
 
+  static const _sacudir = 'p6_sacudir';
+  static const _simulados = 'p6_sensores_simulados';
+
+  bool get sacudirActualiza => _prefs.getBool(_sacudir) ?? true;
+  Future<void> setSacudirActualiza(bool v) => _prefs.setBool(_sacudir, v);
+
+  bool get sensoresSimulados => _prefs.getBool(_simulados) ?? false;
+  Future<void> setSensoresSimulados(bool v) => _prefs.setBool(_simulados, v);
+
   bool get semillaCreada => _prefs.getBool(_semilla) ?? false;
   Future<void> marcarSemillaCreada() => _prefs.setBool(_semilla, true);
 }

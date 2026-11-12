@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -14,13 +13,19 @@ import 'datos/estado_tema.dart';
 import 'datos/repositorio_ubicaciones.dart';
 import 'datos/semilla_archivos.dart';
 import 'datos/servicio_archivos.dart';
+import 'datos/servicio_biometria.dart';
+import 'datos/servicios_p6.dart';
 import 'dominio/modelos.dart';
 
-Future<void> main() async {
+Future<void> main() => iniciarApp();
+
+/// Arranque completo; [autenticador] permite sustituir la biometría (pruebas).
+Future<void> iniciarApp({Autenticador? autenticador}) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
   final documentos = await getApplicationDocumentsDirectory();
+  final soporte = await getApplicationSupportDirectory();
   final temporales = await getTemporaryDirectory();
 
   final preferencias = PreferenciasApp(prefs);
@@ -48,25 +53,20 @@ Future<void> main() async {
   );
   await gestor.iniciar();
 
+  final p6 = ServiciosP6.crear(
+    preferencias: preferencias,
+    documentos: documentos,
+    soporte: soporte,
+    servicioPrivado: servicios.privado,
+    autenticador: autenticador,
+  );
+  await p6.transferencias.iniciar();
+
   runApp(GestorApp(
     tema: tema,
     gestor: gestor,
     acciones: AccionesArchivo(temporales),
     documentos: documentos,
-  ));
-}
-
-/// Punto de entrada reutilizable por las pruebas de integración.
-Future<void> arrancarParaPruebas({
-  required EstadoTema tema,
-  required EstadoGestor gestor,
-  required AccionesArchivo acciones,
-  required Directory documentos,
-}) async {
-  runApp(GestorApp(
-    tema: tema,
-    gestor: gestor,
-    acciones: acciones,
-    documentos: documentos,
+    p6: p6,
   ));
 }

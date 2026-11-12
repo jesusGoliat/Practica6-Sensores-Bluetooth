@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gestor_archivos/app.dart';
 import 'package:gestor_archivos/datos/acciones_archivo.dart';
 import 'package:gestor_archivos/datos/cache_miniaturas.dart';
+import 'package:gestor_archivos/datos/servicio_biometria.dart';
+import 'package:gestor_archivos/datos/servicios_p6.dart';
 import 'package:gestor_archivos/datos/estado_gestor.dart';
 import 'package:gestor_archivos/datos/estado_tema.dart';
 import 'package:gestor_archivos/datos/repositorio_ubicaciones.dart';
@@ -15,12 +17,20 @@ import 'package:path/path.dart' as p;
 import 'package:saf/saf.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class _AutenticadorFalso implements Autenticador {
+  _AutenticadorFalso(this.resultado);
+  final ResultadoAutenticacion resultado;
+  @override
+  Future<ResultadoAutenticacion> autenticar(String motivo) async => resultado;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late Directory documentos;
   late EstadoGestor gestor;
   late EstadoTema tema;
+  late ServiciosP6 p6;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -50,6 +60,15 @@ void main() {
       saf: saf,
     );
     await gestor.iniciar();
+    p6 = ServiciosP6.crear(
+      preferencias: preferencias,
+      documentos: documentos,
+      soporte: Directory.systemTemp.createTempSync('p6-soporte-'),
+      servicioPrivado: servicios.privado,
+      autenticador: _AutenticadorFalso(ResultadoAutenticacion.exito),
+    );
+    // Sin sensores físicos reales en pruebas de widget.
+    await p6.ajustes.setSacudir(false);
   });
 
   tearDown(() {
@@ -61,6 +80,7 @@ void main() {
         gestor: gestor,
         acciones: AccionesArchivo(documentos),
         documentos: documentos,
+        p6: p6,
       );
 
   void telefono(WidgetTester tester) {

@@ -136,6 +136,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  consulta_web:
+    dependency: "direct main"
+    description:
+      path: "../../packages/consulta_web"
+      relative: true
+    source: path
+    version: "0.1.0"
   cross_file:
     dependency: transitive
     description:
@@ -168,6 +175,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.15"
+  enlace_ble:
+    dependency: "direct main"
+    description:
+      path: "../../packages/enlace_ble"
+      relative: true
+    source: path
+    version: "0.1.0"
   fake_async:
     dependency: transitive
     description:
@@ -674,6 +688,13 @@ packages:
       relative: true
     source: path
     version: "0.0.1"
+  sensores:
+    dependency: "direct main"
+    description:
+      path: "../../packages/sensores"
+      relative: true
+    source: path
+    version: "0.1.0"
   sensors_plus:
     dependency: "direct main"
     description:

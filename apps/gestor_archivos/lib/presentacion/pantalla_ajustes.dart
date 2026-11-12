@@ -4,6 +4,7 @@ import 'package:comun/comun.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../datos/ajustes_app.dart';
 import '../datos/estado_gestor.dart';
 import '../datos/estado_tema.dart';
 import '../dominio/modelos.dart';
@@ -17,6 +18,7 @@ class PantallaAjustes extends StatelessWidget {
     final tema = context.watch<EstadoTema>();
     final gestor = context.watch<EstadoGestor>();
     final documentos = context.read<Directory>();
+    final ajustes = context.watch<AjustesApp>();
     final esquema = Theme.of(context).colorScheme;
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -155,6 +157,42 @@ class PantallaAjustes extends StatelessWidget {
               style: TextStyle(color: esquema.onSurfaceVariant),
             ),
           ),
+        const Divider(height: 32),
+        Text('Sensores', style: Theme.of(context).textTheme.titleMedium),
+        SwitchListTile(
+          key: const Key('ajustes-sacudir'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Sacudir para actualizar'),
+          subtitle: const Text('Sacudir el teléfono recarga la carpeta abierta en el explorador.'),
+          value: ajustes.sacudirActualiza,
+          onChanged: ajustes.setSacudir,
+        ),
+        const Divider(height: 32),
+        Text('Diagnóstico', style: Theme.of(context).textTheme.titleMedium),
+        SwitchListTile(
+          key: const Key('ajustes-alterar-bloque'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Alterar un bloque (prueba de integridad)'),
+          subtitle: const Text('El próximo envío corrompe un byte; el receptor debe marcarlo como fallido.'),
+          value: ajustes.alterarBloque,
+          onChanged: ajustes.setAlterarBloque,
+        ),
+        SwitchListTile(
+          key: const Key('ajustes-alterar-nombre'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Enviar nombre inválido (prueba de validación)'),
+          subtitle: const Text('La oferta anuncia «../x.txt»; el receptor debe rechazarla.'),
+          value: ajustes.alterarNombre,
+          onChanged: ajustes.setAlterarNombre,
+        ),
+        SwitchListTile(
+          key: const Key('ajustes-simulados'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Usar sensores simulados'),
+          subtitle: const Text('Reemplaza el acelerómetro y el giroscopio por valores de demostración.'),
+          value: ajustes.sensoresSimulados,
+          onChanged: ajustes.setSimulados,
+        ),
         const Divider(height: 32),
         Text(T.acercaDe, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
