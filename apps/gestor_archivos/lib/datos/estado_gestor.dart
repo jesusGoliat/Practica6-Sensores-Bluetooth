@@ -171,9 +171,16 @@ class EstadoGestor extends ChangeNotifier {
     final lista = await servicio.listar(entrada.raiz, entrada.referencia);
     raizActual = entrada.raiz;
     pila = <EntradaArchivo>[...pila, entrada];
-    entradas = _ordenar(lista);
+    entradas = _ordenar(_sinBoveda(entrada.raiz, entrada.referencia, lista));
     aviso = null;
     notifyListeners();
+  }
+
+  /// La carpeta `protegido/` (Bóveda) no se muestra en el explorador: solo
+  /// se accede a ella tras autenticar.
+  List<EntradaArchivo> _sinBoveda(RaizAutorizada raiz, String referencia, List<EntradaArchivo> lista) {
+    if (raiz.origen != OrigenArchivo.privado || referencia != raizPrivada.referencia) return lista;
+    return lista.where((e) => !(e.esCarpeta && e.nombre == 'protegido')).toList();
   }
 
   Future<void> irA(int indice) async {
@@ -205,7 +212,7 @@ class EstadoGestor extends ChangeNotifier {
     notifyListeners();
     try {
       final lista = await _servicios.para(raiz).listar(raiz, referencia);
-      entradas = _ordenar(lista);
+      entradas = _ordenar(_sinBoveda(raiz, referencia, lista));
     } on ErrorArchivo catch (e) {
       entradas = <EntradaArchivo>[];
       aviso = e.mensaje;

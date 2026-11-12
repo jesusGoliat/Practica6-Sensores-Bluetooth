@@ -5,13 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../datos/acciones_archivo.dart';
+import '../datos/boveda.dart';
 import '../datos/estado_gestor.dart';
+import '../datos/servicio_biometria.dart';
+import '../datos/transferencia/estado_transferencias.dart';
+import '../dominio/transferencia/validador_transferencia.dart';
 import '../dominio/error_archivo.dart';
 import '../dominio/modelos.dart';
 import 'arbol_carpetas.dart';
 import 'dialogo_no_soportado.dart';
 import 'hoja_metadatos.dart';
 import 'pantalla_visor.dart';
+import 'widgets/dialogos_transferencia.dart';
 import 'widgets/dialogo_tema.dart';
 
 class PantallaExplorador extends StatelessWidget {
@@ -410,20 +415,52 @@ class _BotonMenu extends StatelessWidget {
   }
 }
 
+class _Accion {
+  const _Accion(this.valor, this.titulo, {this.motivo, this.separadorAntes = false});
+  final String valor;
+  final String titulo;
+
+  /// Si no es nulo, la acción está deshabilitada y este es el motivo.
+  final String? motivo;
+  final bool separadorAntes;
+}
+
+List<_Accion> _acciones(EntradaArchivo entrada) {
+  final motivoBt = entrada.esCarpeta
+      ? 'Solo se envían archivos, no carpetas.'
+      : ValidadorTransferencia.motivoNoEnviable(entrada.nombre, entrada.tamano);
+  return <_Accion>[
+    const _Accion('abrir', T.abrir),
+    const _Accion('metadatos', T.metadatos),
+    const _Accion('favorito', T.favoritos),
+    const _Accion('renombrar', T.renombrar, separadorAntes: true),
+    const _Accion('copiar', T.copiar),
+    const _Accion('mover', T.mover),
+    const _Accion('compartir', T.compartir),
+    _Accion('bluetooth', 'Enviar por Bluetooth', motivo: motivoBt),
+    const _Accion('exportar', T.exportar),
+    if (!entrada.esCarpeta) const _Accion('abrirCon', T.abrirCon),
+    if (entrada.origen == OrigenArchivo.privado)
+      const _Accion('boveda', 'Mover a la Bóveda'),
+    const _Accion('eliminar', T.eliminar, separadorAntes: true),
+  ];
+}
+
 List<PopupMenuEntry<String>> _items(EntradaArchivo entrada) {
   return <PopupMenuEntry<String>>[
-    const PopupMenuItem(value: 'abrir', child: Text(T.abrir)),
-    const PopupMenuItem(value: 'metadatos', child: Text(T.metadatos)),
-    const PopupMenuItem(value: 'favorito', child: Text(T.favoritos)),
-    const PopupMenuDivider(),
-    const PopupMenuItem(value: 'renombrar', child: Text(T.renombrar)),
-    const PopupMenuItem(value: 'copiar', child: Text(T.copiar)),
-    const PopupMenuItem(value: 'mover', child: Text(T.mover)),
-    const PopupMenuItem(value: 'compartir', child: Text(T.compartir)),
-    const PopupMenuItem(value: 'exportar', child: Text(T.exportar)),
-    if (!entrada.esCarpeta) const PopupMenuItem(value: 'abrirCon', child: Text(T.abrirCon)),
-    const PopupMenuDivider(),
-    const PopupMenuItem(value: 'eliminar', child: Text(T.eliminar)),
+    for (final a in _acciones(entrada)) ...[
+      if (a.separadorAntes) const PopupMenuDivider(),
+      PopupMenuItem<String>(
+        value: a.valor,
+        enabled: a.motivo == null,
+        child: a.motivo == null
+            ? Text(a.titulo)
+            : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(a.titulo),
+                Text(a.motivo!, style: const TextStyle(fontSize: 11)),
+              ]),
+      ),
+    ],
   ];
 }
 
@@ -506,13 +543,14 @@ Future<void> _mostrarAcciones(BuildContext context, EstadoGestor gestor, Entrada
             subtitle: Text(_subtitulo(entrada)),
           ),
           const Divider(height: 1),
-          for (final item in _items(entrada))
-            if (item is PopupMenuItem<String>)
-              ListTile(
-                leading: Icon(_iconoAccion(item.value ?? '')),
-                title: Text((item.child as Text).data ?? ''),
-                onTap: () => Navigator.pop(contexto, item.value),
-              ),
+          for (final a in _acciones(entrada))
+            ListTile(
+              enabled: a.motivo == null,
+              leading: Icon(_iconoAccion(a.valor)),
+              title: Text(a.titulo),
+              subtitle: a.motivo == null ? null : Text(a.motivo!),
+              onTap: a.motivo == null ? () => Navigator.pop(contexto, a.valor) : null,
+            ),
         ],
       ),
     ),
@@ -532,6 +570,8 @@ IconData _iconoAccion(String accion) => switch (accion) {
       'compartir' => Icons.share_outlined,
       'exportar' => Icons.save_alt,
       'abrirCon' => Icons.open_in_browser,
+      'bluetooth' => Icons.bluetooth,
+      'boveda' => Icons.lock_outline,
       _ => Icons.delete_outline,
     };
 
@@ -585,6 +625,26 @@ Future<void> _ejecutarAccion(
         if (context.mounted) avisarError(context, e);
       }
       return;
+    case 'bluetooth':
+      final t = context.read<EstadoTransferencias>();
+      final err = t.encolarEnvio(entrada, gestor.servicioDe(entrada));
+      if (err != null) {
+        _aviso(context, err);
+      } else if (t.emisorConectado) {
+        await confirmarEnvio(context, t);
+      } else {
+        _aviso(context, '«${entrada.nombre}» quedó en la cola. Abre Compartir → Enviar y elige un dispositivo.');
+      }
+      return;
+    case 'boveda':
+      try {
+        await context.read<EstadoBoveda>().moverAqui(entrada);
+        await gestor.recargar();
+        if (context.mounted) _aviso(context, '«${entrada.nombre}» se movió a la Bóveda.');
+      } catch (e) {
+        if (context.mounted) avisarError(context, e);
+      }
+      return;
     case 'eliminar':
       final confirmado = await confirmarAccion(
         context,
@@ -595,7 +655,14 @@ Future<void> _ejecutarAccion(
         textoConfirmar: T.eliminar,
         destructivo: true,
       );
-      if (!confirmado) return;
+      if (!confirmado || !context.mounted) return;
+      final auth = await context
+          .read<Autenticador>()
+          .autenticar('Confirma tu identidad para eliminar ${entrada.nombre}');
+      if (!auth.esExito) {
+        if (context.mounted) _aviso(context, auth.explicacion);
+        return;
+      }
       try {
         await gestor.eliminar(entrada);
       } catch (e) {

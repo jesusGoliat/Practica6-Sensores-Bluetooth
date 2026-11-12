@@ -54,6 +54,12 @@ dependencies:
   selector_carpetas_ios:
     path: ../../packages/selector_carpetas_ios
   sensors_plus: ^7.1.1
+  sensores:
+    path: ../../packages/sensores
+  consulta_web:
+    path: ../../packages/consulta_web
+  enlace_ble:
+    path: ../../packages/enlace_ble
   local_auth: ^3.0.2
   bluetooth_low_energy: ^6.2.1
   permission_handler: ^12.0.1

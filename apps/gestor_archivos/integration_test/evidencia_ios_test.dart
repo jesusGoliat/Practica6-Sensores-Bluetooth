@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gestor_archivos/datos/servicio_biometria.dart';
 import 'package:gestor_archivos/main.dart' as app;
 import 'package:integration_test/integration_test.dart';
 
@@ -43,11 +44,19 @@ Future<void> tocarEntrada(WidgetTester tester, String nombre) async {
   await tester.pumpAndSettle();
 }
 
+/// Autenticador determinista: en el simulador no hay biometría.
+class _AutenticadorNoDisponible implements Autenticador {
+  @override
+  Future<ResultadoAutenticacion> autenticar(String motivo) async =>
+      ResultadoAutenticacion.noDisponible(
+          'Biometría no disponible en este dispositivo (resultado simulado para la evidencia).');
+}
+
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Recorrido de evidencia del gestor', (tester) async {
-    await app.main();
+    await app.iniciarApp(autenticador: _AutenticadorNoDisponible());
     await tester.pumpAndSettle();
     if (Platform.isAndroid) {
       await binding.convertFlutterSurfaceToImage();
@@ -98,5 +107,44 @@ void main() {
     await captura(tester, binding, '09-modo-oscuro');
     tester.binding.platformDispatcher.platformBrightnessTestValue = Brightness.light;
     await tester.pumpAndSettle();
+  
+    // Práctica 6: Compartir (Bluetooth) -> Enviar / Historial.
+    await tester.tap(find.byKey(const Key('nav-compartir')));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pumpAndSettle();
+    await captura(tester, binding, '20-compartir');
+    await tester.tap(find.byKey(const Key('tab-historial')));
+    await tester.pumpAndSettle();
+    await captura(tester, binding, '21-historial');
+    await tester.tap(find.byKey(const Key('tab-recibir')));
+    await tester.pumpAndSettle();
+
+    // Bóveda con resultado «noDisponible» (autenticador de prueba).
+    await tester.tap(find.byKey(const Key('nav-explorador')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('btn-mas')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bóveda').last);
+    await tester.pumpAndSettle();
+    await captura(tester, binding, '22-boveda');
+    await volver(tester);
+
+    // Sensores simulados (Ajustes -> Diagnóstico -> Usar sensores simulados).
+    await tester.tap(find.byKey(const Key('nav-ajustes')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byKey(const Key('ajustes-simulados')), 300,
+        scrollable: find.byType(Scrollable).last);
+    await tester.tap(find.byKey(const Key('ajustes-simulados')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('btn-mas')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sensores').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Switch).first);
+    await tester.pump(const Duration(milliseconds: 800));
+    await captura(tester, binding, '23-sensores-simulados');
+    await tester.tap(find.byType(Switch).first);
+    await tester.pumpAndSettle();
+    await volver(tester);
   });
 }
