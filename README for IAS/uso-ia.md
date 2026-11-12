@@ -21,8 +21,7 @@ registrada; lo demás permanece `pendiente`.
 
 ## Errores detectados
 
-Completar durante la ejecución:
-
-- `<por llenar>` Error de la IA detectado, cómo se detectó y cómo se corrigió.
-- `<por llenar>`
-- `<por llenar>`
+- **Dependencia incompatible con la toolchain.** La IA eligió `permission_handler` 13.x, que exige `compileSdk` 37, y AGP 9.1 recomienda como máximo 36. La compilación de humo falló y se fijó la versión 12.0.x.
+- **Anuncio BLE inviable en Android.** El servidor BLE generado anunciaba un nombre local, pero en Android el plugin lo implementa con `BluetoothAdapter.setName()` (renombra el teléfono) y además no cabe junto al UUID de 128 bits. Se cambió a datos de fabricante en el anuncio (PR #12).
+- **Resultado reportado sin verificar.** Un subagente informó 35/35 pruebas del juego en verde, pero la prueba de red fallaba al ejecutarse en paralelo (esperas de 3 ms). Se detectó al volver a ejecutar las pruebas y se corrigió.
+- **Documentación desalineada con el código.** Los códigos de error web del paquete no coincidían con `docs/protocolo.md` §9; se actualizó el documento contra el código.

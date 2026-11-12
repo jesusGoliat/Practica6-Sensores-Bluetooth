@@ -16,7 +16,7 @@ apps/juego_pares/      Pares IPN   — + partida por BLE entre 2 dispositivos, c
 Versiones: Flutter 3.47.6, Dart 3.13.5, AGP 9.1.0, Gradle 9.3.1, Kotlin 2.4.0, JDK 21,
 minSdk 24, targetSdk 36, iOS 15. Plugins nuevos: `sensors_plus ^7.1.1`,
 `local_auth ^3.0.2` (solo gestor), `bluetooth_low_energy ^6.2.1`,
-`permission_handler ^13.0.2`, `crypto ^3.0.8`. Estado con `provider`.
+`permission_handler ^12.0.1` (la 13.x exige `compileSdk` 37, no soportado por AGP 9.1), `crypto ^3.0.8`. Estado con `provider`.
 Español en toda la UI (textos en `comun` o en la app).
 
 ## Paquete `sensores`

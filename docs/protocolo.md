@@ -20,9 +20,20 @@ código cambia, se actualiza aquí. Versión de protocolo vigente: **1**.
 | RX | `6f1c0002-9b5a-4c1e-8f7e-0c0ffee00006` | write, write without response | central → periférico |
 | TX | `6f1c0003-9b5a-4c1e-8f7e-0c0ffee00006` | notify (CCCD) | periférico → central |
 
-- Anuncio: nombre local `P6-<app>-<4 hex>` más el UUID de servicio. El central filtra el escaneo por ese UUID.
+- Anuncio: el UUID de servicio va en ambas plataformas; el central filtra el escaneo por ese UUID. Lo demás depende del sistema (ver 2.1).
 - Roles: **periférico** = anfitrión/receptor/servidor web (anuncia y acepta un central); **central** = invitado/emisor/cliente web (escanea y conecta). Una sola conexión a la vez.
 - MTU: el central solicita 512 y lee `maximumWriteLength`; el periférico usa `getMaximumNotifyLength(central)`. No hay tamaño universal: **fragmento útil = longitud máxima negociada − 5**.
+
+### 2.1 Datos del anuncio
+
+| Plataforma del anfitrión | Contenido del anuncio |
+|---|---|
+| Android | UUID de servicio de 128 bits + **datos de fabricante** con id `0xFFFF` (reservado para pruebas por el Bluetooth SIG) y 5 bytes: `'P'` (0x50), `'6'` (0x36), código de app (`1` juego, `2` archivos, `3` web) y un sufijo de 2 bytes (big endian). **No se anuncia nombre local.** |
+| iOS | UUID de servicio + nombre local `P6-<app>-<4 hex>` (el sufijo en hexadecimal) |
+
+- En Android el plugin `bluetooth_low_energy` implementa el nombre local con `BluetoothAdapter.setName()`, que renombra el teléfono completo; además 3 B (flags) + 18 B (UUID) + 9 B (fabricante) = 30 B caben en los 31 B del paquete de anuncio y el nombre no.
+- El central construye el nombre visible `P6-<app>-<4 hex>` a partir de los datos de fabricante (Android) o lee el nombre local (iOS). Un anuncio sin los bytes `'P','6'` se ignora.
+- Esta combinación no se ha verificado entre sistemas distintos (ver el README, matriz de pares).
 
 ## 3. Cabecera de fragmento
 
@@ -99,7 +110,7 @@ Reglas: tipos `txt json xml jpg` (`.jpeg` → `jpg`); `longitud` ≤ 512 KiB; bl
 |---|---|---|
 | `PETICION` | `req, url` | `{"req":"r0001a","url":"https://jsonplaceholder.typicode.com/todos/1"}` |
 | `RESPUESTA` | `req, estado, tipo, cuerpo` o `b64`, `bytes, ms, urlFinal, fecha` | `{"req":"r0001a","estado":200,"tipo":"application/json","cuerpo":"{…}","bytes":83,"ms":412,"urlFinal":"https://jsonplaceholder.typicode.com/todos/1","fecha":"2026-11-12T10:15:00Z"}` |
-| `ERROR_WEB` | `req, codigo, mensaje` | `{"req":"r0001a","codigo":"dominio","mensaje":"Destino no permitido"}` |
+| `ERROR_WEB` | `req, codigo, mensaje` | `{"req":"r0001a","codigo":"destino_rechazado","motivo":"dominio","mensaje":"Destino no permitido."}` |
 
 Lista blanca de dominios (puerto 443): `jsonplaceholder.typicode.com`, `httpbin.org`, `api.github.com`, `www.ipn.mx`. Recursos de prueba: ver `docs/diseno-p6.md`.
 
@@ -222,12 +233,16 @@ Pérdida del enlace: no hay reanudación de archivos (queda `fallido`); en juego
 | `ocupado` | todos | Ya hay una sesión activa |
 | `nombre` | archivos | Nombre lógico no permitido |
 | `tipo` | archivos | Tipo/extensión no permitido |
-| `tamano` | archivos/web | Excede el límite |
+| `tamano` | archivos | Excede el límite |
 | `sha256` | archivos | Integridad fallida |
 | `cancelado` | archivos | Cancelado por un extremo |
-| `dominio` | web | Dominio/esquema/puerto no permitido |
-| `destino` | web | IP privada, loopback o redirección no permitida |
+| `destino_rechazado` | web | Falló una regla de validación. Campo extra `motivo`: `urlInvalida`, `esquema`, `credenciales`, `ipLiteral`, `dominio`, `puerto`, `destinoPrivado` (IP privada, loopback o link-local) o `demasiadasRedirecciones` |
 | `limite` | web | Más de 10 peticiones por minuto |
 | `timeout` | web | Más de 10 s |
-| `red` | web | A no tiene Internet o falló DNS/TLS |
+| `sin_internet` | web | A no tiene Internet (incluye fallo de DNS) |
+| `demasiado_grande` | web | Más de 256 KiB o no cabe en un mensaje reensamblado de 64 KiB |
 | `formato_no_admitido` | web | Tipo de contenido no admitido |
+| `formato` | web | Petición mal formada |
+| `red` | web | Otro fallo de red o TLS en A |
+
+Los códigos web coinciden con `packages/consulta_web/lib/src/dominio/codigos_web.dart`. `tamano` aplica solo al canal `archivos`.

@@ -87,24 +87,25 @@ stateDiagram-v2
 - `AppLifecycleState.paused/inactive/hidden`: las suscripciones de sensores se cancelan y se registra «pausa»; al volver a `resumed` se reanudan y se registra «reanuda».
 - Salir de la pantalla de sensores cancela las suscripciones (`dispose`).
 - BLE en segundo plano: una sesión activa puede perderse; se informa al volver y se ofrece reconectar (juego) o se marca `fallido` (archivos).
-- Avisos: **notificaciones locales** (fin de transferencia con la app abierta o recién minimizada); no se usa FCM ni Firebase.
+- Avisos: **locales**, dentro de la app (fin de transferencia con la app abierta o recién minimizada); no se usa FCM ni Firebase ni se declara `POST_NOTIFICATIONS`.
 - El estado de partida y el historial de transferencias se persisten para reanudar o informar fin tras reinicio.
 
 ## 5. Permisos
 
 | Rol / función | Android 12+ (API 31+) | Android ≤ 11 (API ≤ 30) | iOS |
 |---|---|---|---|
-| Escanear (central) | `BLUETOOTH_SCAN` con `neverForLocation` | `BLUETOOTH`, `BLUETOOTH_ADMIN` (≤ 30) y ubicación (necesaria para escanear en ≤ 30) | `NSBluetoothAlwaysUsageDescription` |
+| Escanear (central) | `BLUETOOTH_SCAN` con `neverForLocation` | `BLUETOOTH` y `BLUETOOTH_ADMIN` (`maxSdkVersion=30`) y `ACCESS_FINE_LOCATION` (`maxSdkVersion=30`, necesaria para escanear) | `NSBluetoothAlwaysUsageDescription` |
 | Conectar (central) | `BLUETOOTH_CONNECT` | `BLUETOOTH` | igual |
-| Anunciar (periférico) | `BLUETOOTH_ADVERTISE` y `BLUETOOTH_CONNECT` | `BLUETOOTH`, `BLUETOOTH_ADMIN` | igual |
-| Sensores de movimiento | Ninguno (muestreo ≤ 200 Hz sin permiso) | Ninguno | `NSMotionUsageDescription` (solo para movimiento de CoreMotion; el simulador no tiene sensores) |
-| Biometría | `USE_BIOMETRIC` | `USE_FINGERPRINT`/`USE_BIOMETRIC` | `NSFaceIDUsageDescription` |
-| Consulta web (A) | `INTERNET` (el B no la usa) | `INTERNET` | — |
-| Notificaciones locales | `POST_NOTIFICATIONS` (13+) | — | permiso de notificaciones en tiempo de ejecución |
+| Anunciar (periférico) | `BLUETOOTH_ADVERTISE` y `BLUETOOTH_CONNECT` | `BLUETOOTH`, `BLUETOOTH_ADMIN` (y ubicación en uso, que exige el plugin) | igual |
+| Sensores de movimiento | Ninguno (se declaran `uses-feature` de acelerómetro y giroscopio con `required=false`) | Ninguno | Ninguna clave en `Info.plist`: no hay cadena de uso de movimiento declarada, y el simulador no tiene sensores |
+| Biometría (solo `gestor_archivos`) | `USE_BIOMETRIC` | `USE_BIOMETRIC` | `NSFaceIDUsageDescription` (solo `gestor_archivos`) |
+| Consulta web (A) (solo `gestor_archivos`) | `INTERNET` (el B no la usa) | `INTERNET` | — |
+| Avisos | No se declara `POST_NOTIFICATIONS`: los avisos se muestran dentro de la app | — | No se pide permiso de notificaciones |
 
+- Declarado en ambas apps: los permisos Bluetooth, la ubicación (≤ 30) y los `uses-feature` de BLE, acelerómetro y giroscopio. `USE_BIOMETRIC`, `INTERNET` y `NSFaceIDUsageDescription` existen **solo en `gestor_archivos`**; `juego_pares` no los declara.
 - Ubicación: solo en Android ≤ 11, porque el sistema la exige para escanear BLE; en 12+ se declara `neverForLocation` y no se pide.
 - No se solicita ubicación en segundo plano, almacenamiento amplio ni servicios en primer plano permanentes.
-- Frase de iOS (propósito): «Se usa Bluetooth para jugar y transferir archivos con otro dispositivo cercano».
+- Frase de iOS (propósito): «Se usa Bluetooth para conectar con otro dispositivo cercano y jugar, enviar archivos o consultar recursos web de prueba».
 - Los permisos se piden en contexto (al pulsar la acción), con explicación previa y manejo de denegado, permanente y revocado.
 
 ## 6. Seguridad
