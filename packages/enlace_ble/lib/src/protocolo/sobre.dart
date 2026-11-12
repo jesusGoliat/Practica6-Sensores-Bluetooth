@@ -57,18 +57,17 @@ class Sobre {
 
   /// Mapa JSON del sobre.
   Map<String, dynamic> toJson() => {
-        'v': v,
-        'canal': canal,
-        'sesion': sesion,
-        'seq': seq,
-        'tipo': tipo,
-        'ack': ack,
-        'datos': datos,
-      };
+    'v': v,
+    'canal': canal,
+    'sesion': sesion,
+    'seq': seq,
+    'tipo': tipo,
+    'ack': ack,
+    'datos': datos,
+  };
 
   /// Serializa a JSON UTF-8.
-  Uint8List toBytes() =>
-      Uint8List.fromList(utf8.encode(jsonEncode(toJson())));
+  Uint8List toBytes() => Uint8List.fromList(utf8.encode(jsonEncode(toJson())));
 
   /// Decodifica y valida estrictamente. Lanza [ErrorProtocolo] con código
   /// `formato` (no es JSON/objeto), `version` (v distinta de 1) o `campo`
@@ -78,7 +77,10 @@ class Sobre {
     try {
       crudo = jsonDecode(utf8.decode(bytes));
     } on FormatException catch (e) {
-      throw ErrorProtocolo('formato', 'El mensaje no es JSON UTF-8 válido: ${e.message}');
+      throw ErrorProtocolo(
+        'formato',
+        'El mensaje no es JSON UTF-8 válido: ${e.message}',
+      );
     }
     if (crudo is! Map<String, dynamic>) {
       throw const ErrorProtocolo('formato', 'El mensaje no es un objeto JSON.');
@@ -89,7 +91,9 @@ class Sobre {
     }
     if (v != versionActual) {
       throw ErrorProtocolo(
-          'version', 'Versión de protocolo $v no soportada (se espera $versionActual).');
+        'version',
+        'Versión de protocolo $v no soportada (se espera $versionActual).',
+      );
     }
     final canal = crudo['canal'];
     if (canal is! String || !Canales.todos.contains(canal)) {
@@ -97,7 +101,10 @@ class Sobre {
     }
     final sesion = crudo['sesion'];
     if (sesion is! String || !_reSesion.hasMatch(sesion)) {
-      throw ErrorProtocolo('campo', 'Sesión inválida (se esperan 8 hexadecimales): $sesion.');
+      throw ErrorProtocolo(
+        'campo',
+        'Sesión inválida (se esperan 8 hexadecimales): $sesion.',
+      );
     }
     final seq = crudo['seq'];
     if (seq is! int || seq < 0) {
@@ -112,11 +119,17 @@ class Sobre {
       throw ErrorProtocolo('campo', 'ack inválido: $ack.');
     }
     if (tipo == TiposMensaje.ack && ack == null) {
-      throw const ErrorProtocolo('campo', 'Un ACK debe indicar el seq confirmado.');
+      throw const ErrorProtocolo(
+        'campo',
+        'Un ACK debe indicar el seq confirmado.',
+      );
     }
     final datos = crudo['datos'];
     if (datos != null && datos is! Map<String, dynamic>) {
-      throw const ErrorProtocolo('campo', 'El campo "datos" debe ser un objeto.');
+      throw const ErrorProtocolo(
+        'campo',
+        'El campo "datos" debe ser un objeto.',
+      );
     }
     return Sobre(
       v: v,

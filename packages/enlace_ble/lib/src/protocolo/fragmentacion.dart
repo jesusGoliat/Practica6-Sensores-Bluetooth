@@ -17,10 +17,14 @@ const int banderaUltimo = 0x01;
 /// Parte un mensaje en fragmentos de a lo más [maxFragmento] bytes.
 class Fragmentador {
   /// Crea un fragmentador. Lanza [ArgumentError] si [maxFragmento] ≤ 5.
-  Fragmentador(this.maxFragmento, {int idInicial = 0}) : _siguienteId = idInicial & 0xFFFF {
+  Fragmentador(this.maxFragmento, {int idInicial = 0})
+    : _siguienteId = idInicial & 0xFFFF {
     if (maxFragmento <= bytesCabecera) {
-      throw ArgumentError.value(maxFragmento, 'maxFragmento',
-          'Debe ser mayor que $bytesCabecera (tamaño de la cabecera).');
+      throw ArgumentError.value(
+        maxFragmento,
+        'maxFragmento',
+        'Debe ser mayor que $bytesCabecera (tamaño de la cabecera).',
+      );
     }
   }
 
@@ -36,8 +40,10 @@ class Fragmentador {
   /// o necesitaría más de 65 536 fragmentos.
   List<Uint8List> fragmentar(Uint8List mensaje) {
     if (mensaje.length > maxMensaje) {
-      throw ErrorProtocolo('fragmento',
-          'El mensaje (${mensaje.length} B) excede el límite de $maxMensaje B.');
+      throw ErrorProtocolo(
+        'fragmento',
+        'El mensaje (${mensaje.length} B) excede el límite de $maxMensaje B.',
+      );
     }
     final util = maxFragmento - bytesCabecera;
     final total = mensaje.isEmpty ? 1 : (mensaje.length + util - 1) ~/ util;
@@ -94,7 +100,10 @@ class Reensamblador {
   Uint8List? agregar(Uint8List fragmento) {
     limpiarVencidos();
     if (fragmento.length < bytesCabecera) {
-      throw const ErrorProtocolo('fragmento', 'Fragmento más corto que la cabecera.');
+      throw const ErrorProtocolo(
+        'fragmento',
+        'Fragmento más corto que la cabecera.',
+      );
     }
     final ultimo = (fragmento[0] & banderaUltimo) != 0;
     final id = (fragmento[1] << 8) | fragmento[2];
@@ -102,8 +111,10 @@ class Reensamblador {
     var p = _parciales[id];
     if (p == null) {
       if (indice != 0) {
-        throw ErrorProtocolo('fragmento',
-            'Fragmento $indice del mensaje $id sin haber recibido el inicio.');
+        throw ErrorProtocolo(
+          'fragmento',
+          'Fragmento $indice del mensaje $id sin haber recibido el inicio.',
+        );
       }
       p = _Parcial(_reloj());
       _parciales[id] = p;
@@ -111,12 +122,17 @@ class Reensamblador {
       return null; // duplicado
     } else if (indice > p.siguiente) {
       _parciales.remove(id);
-      throw ErrorProtocolo('fragmento',
-          'Fragmento fuera de orden en el mensaje $id (llegó $indice, se esperaba ${p.siguiente}).');
+      throw ErrorProtocolo(
+        'fragmento',
+        'Fragmento fuera de orden en el mensaje $id (llegó $indice, se esperaba ${p.siguiente}).',
+      );
     }
     if (p.datos.length + fragmento.length - bytesCabecera > maxMensaje) {
       _parciales.remove(id);
-      throw const ErrorProtocolo('fragmento', 'El mensaje excede el límite de 64 KiB.');
+      throw const ErrorProtocolo(
+        'fragmento',
+        'El mensaje excede el límite de 64 KiB.',
+      );
     }
     p.datos.add(Uint8List.sublistView(fragmento, bytesCabecera));
     p.siguiente++;
@@ -130,7 +146,9 @@ class Reensamblador {
   /// Descarta los mensajes incompletos más antiguos que [tiempoLimite].
   void limpiarVencidos() {
     final ahora = _reloj();
-    _parciales.removeWhere((_, p) => ahora.difference(p.inicio) >= tiempoLimite);
+    _parciales.removeWhere(
+      (_, p) => ahora.difference(p.inicio) >= tiempoLimite,
+    );
   }
 
   /// Descarta todo lo pendiente (p. ej. al desconectar).

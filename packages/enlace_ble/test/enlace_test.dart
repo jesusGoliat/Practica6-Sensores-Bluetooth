@@ -23,7 +23,9 @@ void main() {
     eb.mensajes.listen(recibidos.add);
     final datos = {'texto': 'x' * 3000};
     final s1 = await ea.enviar(Canales.juego, ses, TiposMensaje.jugada, datos);
-    final s2 = await ea.enviar(Canales.juego, ses, TiposMensaje.jugada, {'n': 1});
+    final s2 = await ea.enviar(Canales.juego, ses, TiposMensaje.jugada, {
+      'n': 1,
+    });
     await Future<void>.delayed(const Duration(milliseconds: 10));
     expect(s1.seq, 1);
     expect(s2.seq, 2);
@@ -36,8 +38,18 @@ void main() {
   test('seq independiente por sesión; PING no espera ACK', () async {
     final (ea, eb, a, b) = crear();
     eb.mensajes.listen((_) {});
-    final x = await ea.enviar(Canales.control, 'aaaaaaaa', TiposMensaje.ping, {});
-    final y = await ea.enviar(Canales.control, 'bbbbbbbb', TiposMensaje.ping, {});
+    final x = await ea.enviar(
+      Canales.control,
+      'aaaaaaaa',
+      TiposMensaje.ping,
+      {},
+    );
+    final y = await ea.enviar(
+      Canales.control,
+      'bbbbbbbb',
+      TiposMensaje.ping,
+      {},
+    );
     expect(x.seq, 1);
     expect(y.seq, 1);
     await Future<void>.delayed(const Duration(milliseconds: 10));
@@ -51,26 +63,32 @@ void main() {
     final (ea, eb, a, _) = crear();
     final recibidos = <Sobre>[];
     eb.mensajes.listen(recibidos.add);
-    a.descartar = (f, n) => n == 1; // pierde el segundo fragmento del 1.er intento
-    await ea.enviar(Canales.archivos, ses, TiposMensaje.bloque, {'b64': 'A' * 200});
+    a.descartar = (f, n) =>
+        n == 1; // pierde el segundo fragmento del 1.er intento
+    await ea.enviar(Canales.archivos, ses, TiposMensaje.bloque, {
+      'b64': 'A' * 200,
+    });
     await Future<void>.delayed(const Duration(milliseconds: 10));
     expect(recibidos.length, 1);
     await ea.cerrar();
     await eb.cerrar();
   });
 
-  test('ACK perdido: reintento, sin duplicar entrega y con ACK reenviado', () async {
-    final (ea, eb, _, b) = crear();
-    final recibidos = <Sobre>[];
-    eb.mensajes.listen(recibidos.add);
-    b.descartar = (f, n) => n == 0; // se pierde el primer ACK
-    await ea.enviar(Canales.juego, ses, TiposMensaje.jugada, {'indice': 1});
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-    expect(recibidos.length, 1);
-    expect(b.enviados, greaterThanOrEqualTo(2)); // ACK reenviado
-    await ea.cerrar();
-    await eb.cerrar();
-  });
+  test(
+    'ACK perdido: reintento, sin duplicar entrega y con ACK reenviado',
+    () async {
+      final (ea, eb, _, b) = crear();
+      final recibidos = <Sobre>[];
+      eb.mensajes.listen(recibidos.add);
+      b.descartar = (f, n) => n == 0; // se pierde el primer ACK
+      await ea.enviar(Canales.juego, ses, TiposMensaje.jugada, {'indice': 1});
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(recibidos.length, 1);
+      expect(b.enviados, greaterThanOrEqualTo(2)); // ACK reenviado
+      await ea.cerrar();
+      await eb.cerrar();
+    },
+  );
 
   test('fragmentos duplicados no duplican el mensaje', () async {
     final (ea, eb, a, _) = crear();
@@ -94,7 +112,12 @@ void main() {
       final r = Reensamblador().agregar(f);
       if (r != null) acks.add(Sobre.fromBytes(r));
     });
-    final bytes = Sobre(canal: 'juego', sesion: ses, seq: 5, tipo: 'JUGADA').toBytes();
+    final bytes = Sobre(
+      canal: 'juego',
+      sesion: ses,
+      seq: 5,
+      tipo: 'JUGADA',
+    ).toBytes();
     for (final id in [1, 2]) {
       for (final f in Fragmentador(200, idInicial: id).fragmentar(bytes)) {
         await a.enviar(f);
@@ -128,7 +151,9 @@ void main() {
     final estados = <EstadoConexion>[];
     ea.estado.listen(estados.add);
     a.descartar = (f, n) => n > 2; // el mensaje queda a medias
-    final futuro = ea.enviar(Canales.archivos, ses, TiposMensaje.bloque, {'b64': 'A' * 500});
+    final futuro = ea.enviar(Canales.archivos, ses, TiposMensaje.bloque, {
+      'b64': 'A' * 500,
+    });
     final esperado = expectLater(futuro, throwsA(isA<ErrorEnlace>()));
     await Future<void>.delayed(const Duration(milliseconds: 10));
     a.simularDesconexion();
@@ -157,7 +182,9 @@ void main() {
       if (r != null) respuestas.add(Sobre.fromBytes(r));
     });
     final malo = Uint8List.fromList(
-        '{"v":2,"canal":"juego","sesion":"$ses","seq":1,"tipo":"JUGADA","ack":null,"datos":{}}'.codeUnits);
+      '{"v":2,"canal":"juego","sesion":"$ses","seq":1,"tipo":"JUGADA","ack":null,"datos":{}}'
+          .codeUnits,
+    );
     for (final f in Fragmentador(200).fragmentar(malo)) {
       await a.enviar(f);
     }

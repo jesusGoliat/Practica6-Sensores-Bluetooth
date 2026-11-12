@@ -1,3 +1,4 @@
+// ignore_for_file: prefer_initializing_formals
 /// Transporte BLE común a ambos roles (uso interno).
 library;
 
@@ -13,7 +14,9 @@ class TransporteBleInterno implements TransporteBytes {
     required int maxFragmento,
     required Future<void> Function(Uint8List) escribir,
     required Future<void> Function() alCerrar,
-  }) : _maxFragmento = maxFragmento, _escribir = escribir, _alCerrar = alCerrar; // ignore: prefer_initializing_formals
+  }) : _maxFragmento = maxFragmento,
+       _escribir = escribir,
+       _alCerrar = alCerrar;
 
   int _maxFragmento;
   final Future<void> Function(Uint8List) _escribir;
@@ -48,7 +51,9 @@ class TransporteBleInterno implements TransporteBytes {
   @override
   Future<void> enviar(Uint8List fragmento) {
     if (_actual != EstadoConexion.conectado) {
-      return Future.error(const ErrorEnlace('La conexión Bluetooth no está activa.'));
+      return Future.error(
+        const ErrorEnlace('La conexión Bluetooth no está activa.'),
+      );
     }
     final tarea = _cola.then((_) async {
       if (_actual != EstadoConexion.conectado) {

@@ -24,10 +24,13 @@ class Enlace {
     Duration tiempoReensamblado = const Duration(seconds: 10),
     DateTime Function()? reloj,
     ControlDuplicados? duplicados,
-  })  : _fragmentador = Fragmentador(_transporte.maxFragmento),
-        _reensamblador = Reensamblador(tiempoLimite: tiempoReensamblado, reloj: reloj),
-        _duplicados = duplicados ?? ControlDuplicados(),
-        _estadoActual = _transporte.estadoActual {
+  }) : _fragmentador = Fragmentador(_transporte.maxFragmento),
+       _reensamblador = Reensamblador(
+         tiempoLimite: tiempoReensamblado,
+         reloj: reloj,
+       ),
+       _duplicados = duplicados ?? ControlDuplicados(),
+       _estadoActual = _transporte.estadoActual {
     _subRecibidos = _transporte.recibidos.listen(_alRecibir, onError: (_) {});
     _subEstado = _transporte.estado.listen(_alCambiarEstado, onError: (_) {});
   }
@@ -85,7 +88,13 @@ class Enlace {
     final espera = confiable ?? TiposMensaje.esConfiable(tipo);
     final seq = (_seqPorSesion[sesion] ?? 0) + 1;
     _seqPorSesion[sesion] = seq;
-    final sobre = Sobre(canal: canal, sesion: sesion, seq: seq, tipo: tipo, datos: datos);
+    final sobre = Sobre(
+      canal: canal,
+      sesion: sesion,
+      seq: seq,
+      tipo: tipo,
+      datos: datos,
+    );
     await _enviarSobre(sobre, espera: espera);
     return sobre;
   }
@@ -116,7 +125,8 @@ class Enlace {
         }
       }
       throw ErrorEnlace(
-          'Sin confirmación (ACK) del mensaje ${sobre.tipo} tras $intentos intentos.');
+        'Sin confirmación (ACK) del mensaje ${sobre.tipo} tras $intentos intentos.',
+      );
     } finally {
       _esperandoAck.remove(clave);
     }
@@ -149,7 +159,8 @@ class Enlace {
     return tarea;
   }
 
-  static String _clave(String canal, String sesion, int seq) => '$canal/$sesion/$seq';
+  static String _clave(String canal, String sesion, int seq) =>
+      '$canal/$sesion/$seq';
 
   void _alRecibir(Uint8List fragmento) {
     if (_cerrado) return;
@@ -209,7 +220,9 @@ class Enlace {
       _reensamblador.reiniciar();
       for (final c in _esperandoAck.values.toList()) {
         if (!c.isCompleted) {
-          c.completeError(const ErrorEnlace('Conexión perdida antes de recibir el ACK.'));
+          c.completeError(
+            const ErrorEnlace('Conexión perdida antes de recibir el ACK.'),
+          );
         }
       }
     }
@@ -220,7 +233,9 @@ class Enlace {
     if (_cerrado) return;
     _cerrado = true;
     for (final c in _esperandoAck.values.toList()) {
-      if (!c.isCompleted) c.completeError(const ErrorEnlace('El enlace se cerró.'));
+      if (!c.isCompleted) {
+        c.completeError(const ErrorEnlace('El enlace se cerró.'));
+      }
     }
     await _subRecibidos.cancel();
     await _subEstado.cancel();

@@ -15,7 +15,15 @@ import 'transporte_ble.dart';
 /// Dispositivo anunciando el servicio de la práctica.
 class DispositivoEncontrado {
   /// Crea un resultado de escaneo.
-  const DispositivoEncontrado({required this.id, required this.nombre, required this.rssi});
+  const DispositivoEncontrado({
+    required this.id,
+    required this.nombre,
+    required this.rssi,
+    this.app,
+  });
+
+  /// App que anuncia (`juego`, `archivos`, `web`) o `null` si no se sabe.
+  final String? app;
 
   /// Identificador estable durante la sesión (para [ClienteBle.conectar]).
   final String id;
@@ -71,7 +79,12 @@ class ClienteBle {
   /// Cada dispositivo se emite una vez. El stream se cierra al terminar o al
   /// cancelar la suscripción; si Bluetooth no está listo se cierra de inmediato
   /// y [mensajeError] explica el motivo.
-  Stream<DispositivoEncontrado> escanear({Duration tiempo = const Duration(seconds: 10)}) {
+  ///
+  /// Con [app] solo se listan servidores de esa app (o de app desconocida).
+  Stream<DispositivoEncontrado> escanear({
+    Duration tiempo = const Duration(seconds: 10),
+    String? app,
+  }) {
     final id = ++_escaneoActual;
     late final StreamController<DispositivoEncontrado> c;
     StreamSubscription<DiscoveredEventArgs>? sub;
@@ -106,13 +119,28 @@ class ClienteBle {
         sub = g.discovered.listen((e) {
           try {
             final ident = e.peripheral.uuid.toString();
+            String? appVista = appDeNombre(e.advertisement.name);
+            var nombre = e.advertisement.name ?? '';
+            for (final m in e.advertisement.manufacturerSpecificData) {
+              final d = leerDatosFabricante(m.id, m.data);
+              if (d != null) {
+                appVista = d.app;
+                nombre = nombreVisible(d.app, d.sufijo);
+              }
+            }
+            if (app != null && appVista != null && appVista != app) return;
             _encontrados[ident] = e.peripheral;
             if (!vistos.add(ident) || c.isClosed) return;
-            c.add(DispositivoEncontrado(
-              id: ident,
-              nombre: e.advertisement.name ?? '',
-              rssi: e.rssi,
-            ));
+            c.add(
+              DispositivoEncontrado(
+                id: ident,
+                nombre: nombre.isEmpty
+                    ? 'Dispositivo ${ident.substring(ident.length - 5)}'
+                    : nombre,
+                rssi: e.rssi,
+                app: appVista,
+              ),
+            );
           } catch (_) {}
         }, onError: (Object _) {});
         await g.startDiscovery(serviceUUIDs: [uuidServicio]);
@@ -136,7 +164,8 @@ class ClienteBle {
   /// si falló (consulte [mensajeError]).
   Future<TransporteBytes?> conectar(String id) async {
     if (_liberado) return null;
-    if (_actual == EstadoCliente.conectando || _actual == EstadoCliente.conectado) {
+    if (_actual == EstadoCliente.conectando ||
+        _actual == EstadoCliente.conectado) {
       return _transporte;
     }
     _error = null;
@@ -180,7 +209,10 @@ class ClienteBle {
       if (rx == null || tx == null) {
         throw 'faltan las características RX/TX del servicio';
       }
-      final tipo = rx.properties.contains(GATTCharacteristicProperty.writeWithoutResponse)
+      final tipo =
+          rx.properties.contains(
+            GATTCharacteristicProperty.writeWithoutResponse,
+          )
           ? GATTCharacteristicWriteType.withoutResponse
           : GATTCharacteristicWriteType.withResponse;
       var largo = fragmentoPorDefecto;
@@ -191,8 +223,12 @@ class ClienteBle {
       final rxFinal = rx;
       final t = TransporteBleInterno(
         maxFragmento: largo,
-        escribir: (datos) =>
-            g.writeCharacteristic(periferico, rxFinal, value: datos, type: tipo),
+        escribir: (datos) => g.writeCharacteristic(
+          periferico,
+          rxFinal,
+          value: datos,
+          type: tipo,
+        ),
         alCerrar: () async => desconectar(),
       );
       _transporte = t;
@@ -211,21 +247,29 @@ class ClienteBle {
 
   void _escuchar(CentralManager g) {
     if (_subs.isNotEmpty) return;
-    _subs.add(g.connectionStateChanged.listen((a) {
-      if (a.peripheral == _periferico && a.state == ConnectionState.disconnected) {
-        unawaited(_perdida('El otro dispositivo se desconectó.'));
-      }
-    }, onError: (Object _) {}));
-    _subs.add(g.characteristicNotified.listen((a) {
-      if (a.peripheral == _periferico && a.characteristic.uuid == uuidTx) {
-        _transporte?.entregar(a.value);
-      }
-    }, onError: (Object _) {}));
-    _subs.add(g.stateChanged.listen((a) {
-      if (a.state != BluetoothLowEnergyState.poweredOn && _periferico != null) {
-        unawaited(_perdida('Bluetooth dejó de estar disponible.'));
-      }
-    }, onError: (Object _) {}));
+    _subs.add(
+      g.connectionStateChanged.listen((a) {
+        if (a.peripheral == _periferico &&
+            a.state == ConnectionState.disconnected) {
+          unawaited(_perdida('El otro dispositivo se desconectó.'));
+        }
+      }, onError: (Object _) {}),
+    );
+    _subs.add(
+      g.characteristicNotified.listen((a) {
+        if (a.peripheral == _periferico && a.characteristic.uuid == uuidTx) {
+          _transporte?.entregar(a.value);
+        }
+      }, onError: (Object _) {}),
+    );
+    _subs.add(
+      g.stateChanged.listen((a) {
+        if (a.state != BluetoothLowEnergyState.poweredOn &&
+            _periferico != null) {
+          unawaited(_perdida('Bluetooth dejó de estar disponible.'));
+        }
+      }, onError: (Object _) {}),
+    );
   }
 
   /// En Android el plugin identifica por dirección MAC; el id de escaneo la

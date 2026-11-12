@@ -16,13 +16,24 @@ String codigo(Uint8List b) {
 }
 
 Map<String, dynamic> base() => {
-      'v': 1, 'canal': 'juego', 'sesion': 'a1b2c3d4', 'seq': 17,
-      'tipo': 'JUGADA', 'ack': null, 'datos': {'indice': 3},
-    };
+  'v': 1,
+  'canal': 'juego',
+  'sesion': 'a1b2c3d4',
+  'seq': 17,
+  'tipo': 'JUGADA',
+  'ack': null,
+  'datos': {'indice': 3},
+};
 
 void main() {
   test('ida y vuelta', () {
-    final s = Sobre(canal: 'juego', sesion: 'a1b2c3d4', seq: 17, tipo: 'JUGADA', datos: {'indice': 3, 'ñ': 'é'});
+    final s = Sobre(
+      canal: 'juego',
+      sesion: 'a1b2c3d4',
+      seq: 17,
+      tipo: 'JUGADA',
+      datos: {'indice': 3, 'ñ': 'é'},
+    );
     final r = Sobre.fromBytes(s.toBytes());
     expect(r.canal, 'juego');
     expect(r.seq, 17);
