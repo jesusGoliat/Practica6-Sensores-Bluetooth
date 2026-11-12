@@ -2,8 +2,10 @@ import 'package:comun/comun.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../datos/ajustes_sensores.dart';
 import '../datos/estado_juego.dart';
 import '../datos/estado_tema_juego.dart';
+import 'pantalla_sensores_juego.dart';
 
 class PantallaAjustesJuego extends StatefulWidget {
   const PantallaAjustesJuego({super.key});
@@ -93,6 +95,44 @@ class _PantallaAjustesJuegoState extends State<PantallaAjustesJuego> {
             child: const Text('Probar'),
           ),
         ),
+        const Divider(height: 32),
+        Text('Sensores', style: Theme.of(context).textTheme.titleMedium),
+        Builder(builder: (context) {
+          final sensores = context.watch<AjustesSensores>();
+          return Column(children: [
+            ListTile(
+              key: const Key('ajustes-abrir-sensores'),
+              contentPadding: EdgeInsets.zero,
+              minTileHeight: 48,
+              leading: const Icon(Icons.sensors),
+              title: const Text('Sensores'),
+              subtitle: const Text('Acelerómetro y giroscopio en vivo'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const PantallaSensoresJuego()),
+              ),
+            ),
+            SwitchListTile(
+              key: const Key('switch-simulados'),
+              contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.science_outlined),
+              title: const Text('Usar valores simulados'),
+              subtitle: const Text('Para demostraciones y pruebas (insignia SIMULADA)'),
+              value: sensores.simulados,
+              onChanged: sensores.usarSimulados,
+            ),
+            if (sensores.simulados)
+              SwitchListTile(
+                key: const Key('switch-sensor-ausente'),
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.sensors_off_outlined),
+                title: const Text('Simular sensor ausente'),
+                subtitle: const Text('Comprueba el mensaje cuando el teléfono no tiene el sensor'),
+                value: sensores.ausenteSimulado,
+                onChanged: sensores.simularAusente,
+              ),
+          ]);
+        }),
         const Divider(height: 32),
         Text(T.formatoGuardado, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),

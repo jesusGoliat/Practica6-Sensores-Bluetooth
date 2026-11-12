@@ -89,5 +89,26 @@ void main() {
     await tester.tap(find.byKey(const Key('ajustes-juego-azul')));
     await tester.pumpAndSettle();
     await captura(tester, binding, '08-ajustes-tema-azul');
+
+    // Destino Bluetooth: elección de rol.
+    await tester.tap(find.byKey(const Key('nav-bluetooth')));
+    await tester.pumpAndSettle();
+    await captura(tester, binding, '10-bluetooth');
+
+    // Sensores con valores simulados (Ajustes → Usar valores simulados).
+    await tester.tap(find.byKey(const Key('nav-ajustes-juego')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byKey(const Key('switch-simulados')), 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.byKey(const Key('switch-simulados')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('ajustes-abrir-sensores')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Leer sensores'));
+    await tester.pump(const Duration(milliseconds: 1500));
+    await captura(tester, binding, '11-sensores-simulados');
+    await tester.tap(find.text('Leer sensores'));
+    await tester.pump();
+    await volver(tester);
   });
 }

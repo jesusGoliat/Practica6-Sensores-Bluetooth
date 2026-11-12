@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../datos/estado_juego.dart';
 import 'pantalla_ajustes_juego.dart';
+import 'pantalla_bluetooth.dart';
+import 'pantalla_sensores_juego.dart';
 import 'pantalla_inicio.dart';
 import 'pantalla_partidas.dart';
 import 'widgets/dialogo_tema_juego.dart';
@@ -64,6 +66,7 @@ class _PantallaPrincipalJuegoState extends State<PantallaPrincipalJuego> with Wi
     final pantallas = <Widget>[
       PantallaInicio(alVerPartidas: () => setState(() => _indice = 1)),
       const PantallaPartidas(),
+      PantallaBluetooth(visible: _indice == 2),
       const PantallaAjustesJuego(),
     ];
     return PopScope(
@@ -91,6 +94,14 @@ class _PantallaPrincipalJuegoState extends State<PantallaPrincipalJuego> with Wi
           ),
           actions: [
             IconButton(
+              key: const Key('btn-sensores'),
+              tooltip: 'Sensores',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const PantallaSensoresJuego()),
+              ),
+              icon: const Icon(Icons.sensors),
+            ),
+            IconButton(
               key: const Key('btn-tema-juego'),
               tooltip: T.tema,
               onPressed: () => showDialog<void>(
@@ -117,6 +128,12 @@ class _PantallaPrincipalJuegoState extends State<PantallaPrincipalJuego> with Wi
               icon: Icon(Icons.save_outlined),
               selectedIcon: Icon(Icons.save),
               label: T.partidas,
+            ),
+            NavigationDestination(
+              key: Key('nav-bluetooth'),
+              icon: Icon(Icons.bluetooth),
+              selectedIcon: Icon(Icons.bluetooth_connected),
+              label: 'Bluetooth',
             ),
             NavigationDestination(
               key: Key('nav-ajustes-juego'),
